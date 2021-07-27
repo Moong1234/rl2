@@ -88,20 +88,14 @@ class MAgent:
         self.curr_step = 0
         self.train_interval = train_interval
 
-        # """
         self.models = models
 
         self.num_epochs = num_epochs
-        # self.device = device
 
-        num_agents = len(models)
         self.buffers = []
-        for model in self.models:
-            self.buffers.append(buffer_cls(
-                size=buffer_kwargs['size'],
-                state_shape=model.observation_shape,
-                action_shape=model.action_shape
-            ))
+        for _ in range(len(self.models)):
+            self.buffers.append(buffer_cls(**buffer_kwargs))
+
         self._hook = None
 
     @property

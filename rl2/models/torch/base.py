@@ -137,7 +137,7 @@ class TorchModel(nn.Module):
 
     def _infer_from_numpy(self, net, obs, *args):
         obs = torch.from_numpy(obs).float().to(self.device)
-        args = [torch.from_numpy(a).float().ro(self.device) for a in args]
+        args = [torch.from_numpy(a).float().to(self.device) for a in args]
         hidden = None
         with torch.no_grad():
             if self.recurrent:

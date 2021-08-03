@@ -42,6 +42,7 @@ class DQNModel(TorchModel):
     predefined model
     (same one as original paper)
     """
+
     def __init__(self,
                  observation_shape,
                  action_shape,

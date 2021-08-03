@@ -441,8 +441,7 @@ class InjectiveBranchModel(BranchModel):
         observation = self._handle_obs_shape(observation)
         ir = self.encoder(observation, *args)
         if self.recurrent:
-            hidden = ir[1]
-            ir = ir[0]
+            hidden, ir = ir
         ir = torch.cat([ir, injection], dim=-1)
         output = self.head(ir)
 

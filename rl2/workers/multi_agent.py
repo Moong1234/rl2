@@ -51,7 +51,7 @@ class MultiAgentRolloutWorker:
     def save(self, save_dir):
         for i, agent in enumerate(self.agents):
             _save_dir = os.path.join(save_dir,
-                                    f'ckpt/agent{i}/{self.num_steps//1000}k')
+                                     f'ckpt/agent{i}/{self.num_steps//1000}k')
             Path(_save_dir).mkdir(parents=True, exist_ok=True)
             agent.model.save(_save_dir)
 
@@ -166,8 +166,8 @@ class SelfRolloutWorker:
     def rollout(self):
         # Number of agents should always match with number of dimensions
         # returned and possibly the dones.
-        acs = self.agent.act(self.obs).reshape(
-            self.n_env, self.n_agents, -1).squeeze()
+        acs = np.array(list(map(self.agent.act, self.obs)))
+        acs = acs.reshape(self.n_env, self.n_agents, -1).squeeze()
 
         obss, rews, dones, info = self.env.step(acs)
         self.episode_score = self.episode_score + np.array(rews)
@@ -187,7 +187,8 @@ class SelfRolloutWorker:
             infos = info
 
         if self.training:
-            self.agent.step(self.obs, acs, rews, dones, obss)
+            for o, a, r, d, o_ in zip(self.obs, acs, rews, dones, obss):
+                self.agent.step(o, a, r, d, o_)
 
         self.num_steps += self.n_env
         self.ep_steps = self.ep_steps + 1

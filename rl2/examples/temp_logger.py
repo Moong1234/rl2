@@ -5,18 +5,14 @@ import os
 import sys
 import time
 import traceback
-from typing import Dict
 import numpy as np
 from datetime import datetime
 from pathlib import Path
-from subprocess import PIPE, Popen
 from PIL import Image
 
 import torch
 from torch.utils.tensorboard.summary import scalar
 
-from rl2.agents.configs import DEFAULT_DQN_CONFIG
-from tensorboard.compat.proto.summary_pb2 import Summary
 from termcolor import colored
 from torch.utils.tensorboard.writer import FileWriter, SummaryWriter
 

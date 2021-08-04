@@ -437,12 +437,12 @@ class InjectiveBranchModel(BranchModel):
         if make_target:
             self.head_target = copy.deepcopy(self.head)
 
-    def forward(self, observation, injection, *args):
+    def forward(self, observation, injection, *args, **kwargs):
         observation = self._handle_obs_shape(observation)
-        ir = self.encoder(observation, *args)
+        ir = self.encoder(observation, *args, **kwargs)
         if self.recurrent:
-            hidden, ir = ir
-        ir = torch.cat([ir, injection], dim=-1)
+            ir, hidden = ir
+        ir = torch.cat([ir, injection.unsqueeze(0)], dim=-1)
         output = self.head(ir)
 
         if self.recurrent:

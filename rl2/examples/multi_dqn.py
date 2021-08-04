@@ -18,6 +18,7 @@ myconfig = {
     'update_interval': 100000,
     'train_interval': 1,
     'log_interval': 100,
+    'recurrent': True,
     'lr': 1e-4,
     'gamma': 0.99,
     'eps_start': 0.5,
@@ -60,6 +61,7 @@ if __name__ == "__main__":
                      polyak=config.polyak,
                      reorder=True,
                      discrete=True,
+                     recurrent=config.recurrent
                      )
 
     if hasattr(config, 'load_dir') and isfile(config.load_dir):

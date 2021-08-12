@@ -135,15 +135,17 @@ class TorchModel(nn.Module):
             len(done_idx), self.encoded_dim).to(self.device)
         self.hidden = (hidden, cell)
 
-    def _infer_from_numpy(self, net, obs, *args):
+    def _infer_from_numpy(self, net, obs, *args, **kwargs):
         obs = torch.from_numpy(obs).float().to(self.device)
         args = [torch.from_numpy(a).float().to(self.device) for a in args]
-        hidden = None
+
         with torch.no_grad():
             if self.recurrent:
-                dist, hidden = net(obs.unsqueeze(0), *args, hidden=self.hidden)
+                kwargs.setdefault('hidden', self.hidden)
+                dist, hidden = net(obs, *args, **kwargs)
+
             else:
-                dist = net(obs, *args)
+                dist, hidden = net(obs, *args), None
 
         return dist, hidden
 

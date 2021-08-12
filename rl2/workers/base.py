@@ -1,7 +1,7 @@
 import os
 import numpy as np
 from pathlib import Path
-from collections import deque
+from collections import deque, Iterable
 from rl2.agents.base import Agent
 
 
@@ -72,7 +72,7 @@ class RolloutWorker:
             if info:
                 if isinstance(info, dict):
                     info = {**info, **info_a}
-                elif isinstance(info, list) or isinstance(info, tuple):
+                elif isinstance(info, Iterable):
                     info = {**info_a}
                     # for env_i, info_i in enumerate(info):
                     #     info['env_{}'.format(env_i)] = info_i

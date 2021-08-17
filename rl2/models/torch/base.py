@@ -444,7 +444,9 @@ class InjectiveBranchModel(BranchModel):
         ir = self.encoder(observation, *args, **kwargs)
         if self.recurrent:
             ir, hidden = ir
-        ir = torch.cat([ir, injection.unsqueeze(0)], dim=-1)
+        if len(injection.shape) == 1:
+            injection.unsqueeze_(0)
+        ir = torch.cat([ir, injection], dim=-1)
         output = self.head(ir)
 
         if self.recurrent:
@@ -458,6 +460,8 @@ class InjectiveBranchModel(BranchModel):
             if self.recurrent:
                 hidden = ir[1]
                 ir = ir[0]
+            if len(injection.shape) == 1:
+                injection.unsqueeze_(0)
             ir = torch.cat([ir, injection], dim=-1)
             output = self.head_target(ir)
 

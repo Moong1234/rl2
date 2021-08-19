@@ -13,7 +13,6 @@ import torch.nn.functional as F
 
 from rl2.networks.torch import MLP, ConvEnc, LSTM
 import rl2.distributions.torch as dist
-
 """
 interface that can handle most of the recent algorithms. (PG, Qlearning)
 but interface itself can serve as vanilla algorithm
@@ -30,14 +29,11 @@ class TorchModel(nn.Module):
     inherits nn.Module to utilize its functionalities, e.g. model.state_dict()
     child classes must init TorchModel for torch utilities
     """
-
-    def __init__(
-            self,
-            observation_shape: tuple,
-            action_shape: tuple,
-            device: str = None,
-            **kwargs
-    ):
+    def __init__(self,
+                 observation_shape: tuple,
+                 action_shape: tuple,
+                 device: str = None,
+                 **kwargs):
         super().__init__()
         self.observation_shape = observation_shape
         self.action_shape = action_shape
@@ -80,7 +76,7 @@ class TorchModel(nn.Module):
     @staticmethod
     def polyak_update(source, target, tau=0.95):
         for p, p_t in zip(source.parameters(), target.parameters()):
-            p_t.data.copy_((1-tau) * p.data + tau * p_t.data)
+            p_t.data.copy_((1 - tau) * p.data + tau * p_t.data)
 
     @staticmethod
     def get_optimizer_by_name(modules: Iterable, optim_name: str,
@@ -129,10 +125,10 @@ class TorchModel(nn.Module):
         hidden = new_hidden[0]
         cell = new_hidden[1]
         done_idx = np.where(np.asarray(dones) == 1)[0]
-        hidden[0, done_idx, :] = torch.zeros(
-            len(done_idx), self.encoded_dim).to(self.device)
-        cell[0, done_idx, :] = torch.zeros(
-            len(done_idx), self.encoded_dim).to(self.device)
+        hidden[0, done_idx, :] = torch.zeros(len(done_idx),
+                                             self.encoded_dim).to(self.device)
+        cell[0, done_idx, :] = torch.zeros(len(done_idx),
+                                           self.encoded_dim).to(self.device)
         self.hidden = (hidden, cell)
 
     def _infer_from_numpy(self, net, obs, *args):
@@ -149,7 +145,11 @@ class TorchModel(nn.Module):
 
 
 class BaseEncoder(nn.Module):
-    def __init__(self, net, encoded_dim, reorder=False, flatten=False,
+    def __init__(self,
+                 net,
+                 encoded_dim,
+                 reorder=False,
+                 flatten=False,
                  recurrent=False):
         super().__init__()
         self.net = net
@@ -230,8 +230,7 @@ class BranchModel(TorchModel):
                  recurrent=False,
                  **kwargs):
         device = kwargs.get('device')
-        super().__init__(observation_shape, action_shape,
-                         device)
+        super().__init__(observation_shape, action_shape, device)
         optim_args = kwargs.get('optim_args', {})
         high = kwargs.get('high', 1)
 
@@ -243,28 +242,40 @@ class BranchModel(TorchModel):
         if (not encoder and not default) or flatten:
             # Observation space will be the encoded space
             encoded_dim = sum(list(observation_shape))
-        self.encoder = self._handle_encoder(
-            encoder, observation_shape, encoded_dim,
-            reorder=reorder, flatten=flatten, default=default, high=high,
-            rnn=recurrent
-        ).to(self.device)
+        self.encoder = self._handle_encoder(encoder,
+                                            observation_shape,
+                                            encoded_dim,
+                                            reorder=reorder,
+                                            flatten=flatten,
+                                            default=default,
+                                            high=high,
+                                            rnn=recurrent).to(self.device)
 
         self.head = self._handle_head(
-            head, action_shape, encoded_dim, discrete, deterministic,
+            head,
+            action_shape,
+            encoded_dim,
+            discrete,
+            deterministic,
             depth=head_depth,
         ).to(self.device)
 
-        self.optimizer = self.get_optimizer_by_name(
-            [self.encoder, self.head], optimizer, **optim_args
-        )
+        self.optimizer = self.get_optimizer_by_name([self.encoder, self.head],
+                                                    optimizer, **optim_args)
         self.encoder_target = None
         self.head_target = None
         if make_target:
             self.encoder_target = copy.deepcopy(self.encoder)
             self.head_target = copy.deepcopy(self.head)
 
-    def _handle_encoder(self, encoder, observation_shape, encoded_dim,
-                        reorder=False, flatten=False, default=True, rnn=False,
+    def _handle_encoder(self,
+                        encoder,
+                        observation_shape,
+                        encoded_dim,
+                        reorder=False,
+                        flatten=False,
+                        default=True,
+                        rnn=False,
                         high=1):
         if encoder:
             # User has given the encoder, validate!
@@ -297,29 +308,35 @@ class BranchModel(TorchModel):
             raise ValueError("Cannot create a default encoder for "
                              "observation of dimension > 3 or 2")
 
-    def _handle_head(self, head, action_shape, encoded_dim,
-                     discrete, deterministic, depth=0):
+    def _handle_head(self,
+                     head,
+                     action_shape,
+                     encoded_dim,
+                     discrete,
+                     deterministic,
+                     depth=0):
         # User may have given the head module.
         # Validate that head is compatible with the parameterization
         # to be used.
-        output_dim = action_shape[0]
-        dims = [encoded_dim, output_dim]
-        if discrete:
-            if deterministic:
-                # distribution = 'GumbelSoftmax'
-                # Change for dqn default head
-                # remove GumbelSoftmax if DPG cant handle discrete action_space
-                distribution = 'Scalar'
+        if not head:
+            output_dim = action_shape[0]
+            dims = [encoded_dim, output_dim]
+            if discrete:
+                if deterministic:
+                    # distribution = 'GumbelSoftmax'
+                    # Change for dqn default head
+                    # remove GumbelSoftmax if DPG cant handle discrete action_space
+                    distribution = 'Scalar'
+                else:
+                    distribution = 'Categorical'
             else:
-                distribution = 'Categorical'
-        else:
-            if deterministic:
-                distribution = 'Scalar'
-            else:
-                distribution = 'Gaussian'
-                # TODO: Add other distributions
-                # ex) GMM, quantile, beta, etc.
-        head = getattr(dist, distribution + 'Head')(*dims, module=head)
+                if deterministic:
+                    distribution = 'Scalar'
+                else:
+                    distribution = 'Gaussian'
+                    # TODO: Add other distributions
+                    # ex) GMM, quantile, beta, etc.
+            head = getattr(dist, distribution + 'Head')(*dims, module=head)
 
         return head
 
@@ -343,7 +360,7 @@ class BranchModel(TorchModel):
         if len(observation.shape) == len(self.observation_shape):
             observation = observation.unsqueeze(0)
         if (self.recurrent
-           and len(observation.shape) == len(self.observation_shape) + 1):
+                and len(observation.shape) == len(self.observation_shape) + 1):
             observation = observation.unsqueeze(0)
 
         return observation
@@ -376,8 +393,7 @@ class BranchModel(TorchModel):
     def step(self, loss, retain_graph=False):
         self.optimizer.zero_grad()
         loss.backward(retain_graph=retain_graph)
-        torch.nn.utils.clip_grad_norm_(
-            self.parameters(), self.grad_clip)
+        torch.nn.utils.clip_grad_norm_(self.parameters(), self.grad_clip)
         self.optimizer.step()
 
     @abstractmethod
@@ -413,26 +429,32 @@ class InjectiveBranchModel(BranchModel):
                  reorder=False,
                  flatten=False,
                  **kwargs):
-        super().__init__(
-            observation_shape, action_shape, encoder=encoder,
-            encoded_dim=encoded_dim, head=head,  optimizer=optimizer, lr=lr,
-            grad_clip=grad_clip, make_target=make_target, discrete=discrete,
-            deterministic=deterministic, default=default, reorder=reorder,
-            flatten=flatten,
-            **kwargs)
+        super().__init__(observation_shape,
+                         action_shape,
+                         encoder=encoder,
+                         encoded_dim=encoded_dim,
+                         head=head,
+                         optimizer=optimizer,
+                         lr=lr,
+                         grad_clip=grad_clip,
+                         make_target=make_target,
+                         discrete=discrete,
+                         deterministic=deterministic,
+                         default=default,
+                         reorder=reorder,
+                         flatten=flatten,
+                         **kwargs)
         optim_args = kwargs.get('optim_args', {})
 
         if (not encoder and not default) or flatten:
             # Observation space will be the encoded space
             encoded_dim = sum(list(observation_shape))
         encoded_dim += injection_shape[0]
-        self.head = self._handle_head(
-            head, action_shape, encoded_dim, discrete, deterministic
-        ).to(self.device)
+        self.head = self._handle_head(head, action_shape, encoded_dim,
+                                      discrete, deterministic).to(self.device)
 
-        self.optimizer = self.get_optimizer_by_name(
-            [self.encoder, self.head], optimizer, **optim_args
-        )
+        self.optimizer = self.get_optimizer_by_name([self.encoder, self.head],
+                                                    optimizer, **optim_args)
         self.head_target = None
         if make_target:
             self.head_target = copy.deepcopy(self.head)

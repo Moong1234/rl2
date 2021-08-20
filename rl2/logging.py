@@ -9,7 +9,6 @@ from termcolor import colored
 # from tensorboardX import SummaryWriter
 # from tensorboardX.summary import Summary
 from torch.utils.tensorboard import SummaryWriter
-from torch.utils.tensorboard.summary import
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 import numpy as np

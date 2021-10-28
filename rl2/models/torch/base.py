@@ -306,22 +306,23 @@ class BranchModel(TorchModel):
         # to be used.
         output_dim = action_shape[0]
         dims = [encoded_dim, output_dim]
-        if discrete:
-            if deterministic:
-                # distribution = 'GumbelSoftmax'
-                # Change for dqn default head
-                # remove GumbelSoftmax if DPG cant handle discrete action_space
-                distribution = 'Scalar'
+        if not head:
+            if discrete:
+                if deterministic:
+                    # distribution = 'GumbelSoftmax'
+                    # Change for dqn default head
+                    # remove GumbelSoftmax if DPG cant handle discrete action_space
+                    distribution = 'Scalar'
+                else:
+                    distribution = 'Categorical'
             else:
-                distribution = 'Categorical'
-        else:
-            if deterministic:
-                distribution = 'Scalar'
-            else:
-                distribution = 'Gaussian'
-                # TODO: Add other distributions
-                # ex) GMM, quantile, beta, etc.
-        head = getattr(dist, distribution + 'Head')(*dims, module=head)
+                if deterministic:
+                    distribution = 'Scalar'
+                else:
+                    distribution = 'Gaussian'
+                    # TODO: Add other distributions
+                    # ex) GMM, quantile, beta, etc.
+            head = getattr(dist, distribution + 'Head')(*dims, module=head)
 
         return head
 

@@ -35,10 +35,11 @@ def ppo(obs_shape, ac_shape, config, props, load_dir=None):
 
 
 def train(config):
-    logger = Logger(name='MATRAIN', args=config)
+    logger = Logger(name='PPOCOOP', args=config)
     env, observation_shape, action_shape, props = make_snake(
         n_env=config.n_env,
         num_snakes=config.num_snakes,
+        id='CoopSnake-v1',
         width=config.width,
         height=config.height,
         vision_range=config.vision_range,
@@ -74,7 +75,7 @@ def test(config, load_dir=None):
             _config = EasyDict(json.load(config_f))
     else:
         model_dir = None
-    logger = Logger(name='MATEST', args=config)
+    logger = Logger(name='PPOCOOP', args=config)
 
     env, observation_shape, action_shape, props = make_snake(
         n_env=1,
@@ -128,8 +129,8 @@ if __name__ == "__main__":
         'custom_rewardf': {
             'fruit': 1.0,
             'kill': -1.0,
-            'lose': -1.0,
-            'win': -1.0,
+            'lose': 0.0,
+            'win': 0.0,
             'time': -0.01
         }
     }
@@ -137,4 +138,4 @@ if __name__ == "__main__":
 
     log_dir = train(config)
     # log_dir = 'runs/DEBUG/20210505180137'
-    test(config, load_dir=log_dir)
+    # test(config, load_dir=log_dir)

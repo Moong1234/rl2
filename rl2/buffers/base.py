@@ -237,11 +237,10 @@ class TemporalMemory(ReplayBuffer):
                 self.start += num_skip
                 if self.start > self.curr_size:
                     self.start = 0
+            if return_idx:
+                output.append((idx, sub_idx))
         else:
-            raise NotImplementedError
-
-        if return_idx:
-            output.append((idx, sub_idx))
+            output = transitions
 
         return tuple(output)
 

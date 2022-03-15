@@ -26,32 +26,37 @@ def ppo(obs_shape, ac_shape, config, props, load_dir=None):
         model.load(load_dir)
     agent = PPOAgent(model,
                      train_interval=config.train_interval,
-                     n_env=props.n_env,
+                     #  n_env=props.n_env,
+                     n_env=props.num_envs,
                      batch_size=config.batch_size,
                      num_epochs=config.epoch,
                      buffer_kwargs={'size': config.train_interval,
-                                    'n_env': props.n_env})
+                                    # 'n_env': props.n_env})
+                                    'n_env': props.num_envs})
     return agent
 
 
 def train(config):
     logger = Logger(name='PPOCOOP', args=config)
     env, observation_shape, action_shape, props = make_snake(
-        n_env=config.n_env,
-        num_snakes=config.num_snakes,
         id='CoopSnake-v1',
+        num_envs=config.n_env,
+        num_snakes=config.num_snakes,
+        num_fruits=config.num_snakes * 2,
         width=config.width,
         height=config.height,
         vision_range=config.vision_range,
         frame_stack=config.frame_stack,
-        reward_dict=config.custom_rewardf
+        reward_dict=config.custom_rewardf,
     )
+    props = EasyDict(props)
 
     agents = []
     for _ in range(config.num_snakes):
         agents.append(ppo(observation_shape, action_shape, config, props))
 
-    worker = MAMaxStepWorker(env, props.n_env, agents,
+    worker = MAMaxStepWorker(env, props.num_envs, agents,
+                             # worker = MAMaxStepWorker(env, props.n_env, agents,
                              max_steps=int(1e8),
                              training=True,
                              logger=logger,
@@ -78,7 +83,7 @@ def test(config, load_dir=None):
     logger = Logger(name='PPOCOOP', args=config)
 
     env, observation_shape, action_shape, props = make_snake(
-        n_env=1,
+        num_envs=1,
         num_snakes=config.num_snakes,
         width=config.width,
         height=config.height,
@@ -91,8 +96,6 @@ def test(config, load_dir=None):
         if model_dir is not None:
             model_file = os.path.join(model_dir,
                                       f'agent{i}', '100k', 'PPOModel.pt')
-            # model_file = os.path.join(model_dir,
-            #                           '100k', 'PPOModel.pt')
         else:
             model_file = None
         agents.append(
@@ -100,7 +103,7 @@ def test(config, load_dir=None):
                 load_dir=model_file)
         )
 
-    worker = MAEpisodicWorker(env, props.n_env, agents,
+    worker = MAEpisodicWorker(env, props.num_envs, agents,
                               max_episodes=3, training=False,
                               render=True,
                               render_interval=1,
@@ -137,5 +140,3 @@ if __name__ == "__main__":
     config = EasyDict(myconfig)
 
     log_dir = train(config)
-    # log_dir = 'runs/DEBUG/20210505180137'
-    # test(config, load_dir=log_dir)

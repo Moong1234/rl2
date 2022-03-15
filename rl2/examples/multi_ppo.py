@@ -89,7 +89,7 @@ def test(config, load_dir=None):
     for i in range(config.num_snakes):
         if model_dir is not None:
             model_file = os.path.join(model_dir,
-                                      f'agent{i}', '100k', 'PPOModel.pt')
+                                      f'agent{i}', '100000k', 'PPOModel.pt')
             # model_file = os.path.join(model_dir,
             #                           '100k', 'PPOModel.pt')
         else:
@@ -100,7 +100,7 @@ def test(config, load_dir=None):
         )
 
     worker = MAEpisodicWorker(env, props.n_env, agents,
-                              max_episodes=3, training=False,
+                              max_episodes=100, training=False,
                               render=True,
                               render_interval=1,
                               logger=logger)
@@ -110,9 +110,9 @@ def test(config, load_dir=None):
 if __name__ == "__main__":
     myconfig = {
         'n_env': 24,
-        'num_snakes': 2,
-        'width': 14,
-        'height': 14,
+        'num_snakes': 4,
+        'width': 20,
+        'height': 20,
         'vision_range': 5,
         'frame_stack': 2,
         'batch_size': 512,
@@ -128,13 +128,14 @@ if __name__ == "__main__":
         'custom_rewardf': {
             'fruit': 1.0,
             'kill': -1.0,
-            'lose': -1.0,
-            'win': -1.0,
+            'lose': 0.0,
+            'win': 0.0,
             'time': -0.01
         }
     }
     config = EasyDict(myconfig)
 
-    log_dir = train(config)
+    # log_dir = train(config)
     # log_dir = 'runs/DEBUG/20210505180137'
+    log_dir = 'runs/PPO/20220217181223'
     test(config, load_dir=log_dir)
